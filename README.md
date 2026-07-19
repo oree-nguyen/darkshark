@@ -5,7 +5,7 @@
 **A local-first, multi-agent coding orchestrator for Windows.**
 Bring your own AI — DarkShark handles planning, cost control, sandboxing, and safety.
 
-[English](README.md) · [Tiếng Việt](README.vi.md)
+[English](README.md) · [Tiếng Việt](VN_README.md)
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D6)]()
