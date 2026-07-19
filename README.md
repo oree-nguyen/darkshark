@@ -2,155 +2,202 @@
 
 # 🦈 DarkShark
 
-**Multi-agent coding orchestrator chạy ngay trên máy Windows của bạn.**
-Bạn mang API key riêng (BYOK) — DarkShark chỉ lo phần điều phối, kiểm soát chi phí và an toàn.
+**A local-first, multi-agent coding orchestrator for Windows.**
+Bring your own AI — DarkShark handles planning, cost control, sandboxing, and safety.
 
+[English](README.md) · [Tiếng Việt](README.vi.md)
+
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D6)]()
-[![License](https://img.shields.io/badge/license-TBD-lightgrey)]()
 [![Status](https://img.shields.io/badge/status-in%20development-orange)]()
 
 </div>
 
 ---
 
-## DarkShark là gì?
+## What is DarkShark?
 
-DarkShark là một ứng dụng desktop (`.exe`, cài đặt một lần, không cần Docker/Postgres/Node/Python)
-điều phối nhiều AI-agent để tự động lập trình — lập kế hoạch, viết code, tự review, tự chạy test, tự
-rà bảo mật — trên chính máy tính của bạn.
+DarkShark is a desktop application (single installer, no Docker/Postgres/Node/Python required) that
+orchestrates multiple AI agents to plan, write, review, test, and secure code — running on your own
+machine, talking directly to the AI provider(s) **you** choose.
 
-DarkShark **không bán quyền dùng AI**. Bạn tự thêm API key của Anthropic hoặc OpenAI (mô hình
-Bring-Your-Own-Key), và mọi request gọi thẳng từ máy bạn tới nhà cung cấp AI bằng key của chính bạn.
-DarkShark không proxy, không log nội dung, không thu phí AI.
+DarkShark does not sell AI usage. You connect your own API keys (Anthropic, OpenAI, or any
+OpenAI-compatible endpoint — including self-hosted or third-party models), or use a free trial
+connection to get started instantly. Every request goes straight from your machine to your chosen
+provider; DarkShark itself does not act as a proxy or log request content.
 
-> Thiết kế nhắm tới máy cấu hình phổ thông: 4 nhân CPU / 8GB RAM / không cần GPU rời.
-> Khởi động ứng dụng dưới 5 giây, RAM chờ (idle) dưới 300MB.
-
----
-
-## Mục lục
-
-- [Tính năng chính](#tính-năng-chính)
-- [Smart Mode — phân tầng model để giảm chi phí](#smart-mode--phân-tầng-model-để-giảm-chi-phí)
-- [Cách hoạt động (tổng quan)](#cách-hoạt-động-tổng-quan)
-- [Yêu cầu hệ thống](#yêu-cầu-hệ-thống)
-- [Cài đặt](#cài-đặt)
-- [Bắt đầu nhanh](#bắt-đầu-nhanh)
-- [Cấu hình (`config.yaml`)](#cấu-hình-configyaml)
-- [Kiến trúc & an toàn](#kiến-trúc--an-toàn)
-- [Bảo mật & quyền riêng tư](#bảo-mật--quyền-riêng-tư)
-- [Câu hỏi thường gặp](#câu-hỏi-thường-gặp)
-- [Đóng góp](#đóng-góp)
-- [Giấy phép](#giấy-phép)
+> Built for ordinary hardware: 4 CPU cores / 8GB RAM / no dedicated GPU required.
+> App startup under 5 seconds, idle RAM under 300MB.
 
 ---
 
-## Tính năng chính
+## Table of Contents
 
-- 🧭 **3 chế độ thực thi** — Planning (việc nhiều bước), Fast (việc đơn giản), Amend (chỉ sửa phần
-  sai của lần chạy trước, không làm lại từ đầu).
-- 🧩 **Task Graph** — chia yêu cầu lớn thành các task nhỏ có phụ thuộc rõ ràng, chạy song song khi
-  độc lập với nhau.
-- 🗺️ **Graphify** — tự lập bản đồ codebase (tree-sitter, chạy cục bộ, không tốn token AI) để agent
-  hiểu đúng ngữ cảnh trước khi sửa.
-- 💰 **Cost Guard** — ước tính & chặn chi phí **trước khi** gọi AI, có phanh khẩn cấp nếu chi phí
-  thực tế vượt xa ước tính giữa chừng.
-- 🔒 **Approval Gate** — tự dừng, xin xác nhận của bạn khi việc đụng tới vùng nhạy cảm (thanh toán,
-  đăng nhập, migration).
-- 🛡️ **Sandbox isolation** — mỗi Subagent chạy trong Windows Job Object + AppContainer riêng, giới
-  hạn CPU/RAM, chặn truy cập mạng ngoài whitelist ở tầng hệ điều hành.
-- 🔁 **Circuit Breaker 2 tầng** — giới hạn số lần retry độc lập cho Review và Test, tránh AI lặp vô
-  tận gây tốn tiền.
-- 📜 **Audit Log bất biến** — mọi hành động quan trọng (chi tiền, merge, rollback, dừng khẩn cấp)
-  được ghi lại vĩnh viễn, không sửa/xoá được kể cả bởi chính hệ thống.
-- 🧠 **Knowledge distillation** — sau mỗi phiên, chắt lọc bài học quan trọng, chỉ "quên" chi tiết
-  nháp sau khi đã ghi lại điều cần nhớ.
-- ♻️ **Tự phục hồi sau crash** — nếu app tắt đột ngột giữa chừng, lần mở lại tự đưa việc dang dở về
-  hàng chờ thay vì mất session.
-- 🖥️ **Low-Spec Mode** — tự giảm số Subagent chạy song song khi RAM khả dụng thấp, tránh treo máy.
-- 🌐 **Offline-first** — chỉ cần mạng khi thật sự gọi AI; linter, test runner, quét bảo mật vẫn chạy
-  được khi mất mạng.
+- [Key Features](#key-features)
+- [Conversation-first interface](#conversation-first-interface)
+- [Model Servers — connect any provider, any model](#model-servers--connect-any-provider-any-model)
+- [Smart vs Normal mode](#smart-vs-normal-mode)
+- [Try it free with Puter (no key required)](#try-it-free-with-puter-no-key-required)
+- [How it works (overview)](#how-it-works-overview)
+- [System Requirements](#system-requirements)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [Architecture & Safety](#architecture--safety)
+- [Security & Privacy](#security--privacy)
+- [FAQ](#faq)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## Smart Mode — phân tầng model để giảm chi phí
+## Key Features
 
-Phần lớn chi phí không nằm ở bước *lên kế hoạch* mà nằm ở bước *viết code / sửa lỗi lặp lại*. Khi bật
-**⚡ Smart Mode**, DarkShark tách 2 vai trò và giao cho 2 tier model khác nhau:
-
-| Vai trò | Việc cụ thể | Model tier |
-|---|---|---|
-| 🧠 **Nghĩ** | Chọn chiến lược, lập kế hoạch, duyệt yêu cầu chuyển việc, rà bảo mật, chắt lọc tri thức | **Elite** (mạnh, đắt) |
-| ⚙️ **Làm** | Viết code, sửa lỗi, debug, chạy & báo cáo test, dọn code | **Scout** (nhẹ, rẻ) |
-
-Nếu một task ở tier Scout thất bại và cần thử lại, DarkShark **tự động nâng lên Elite** cho lần thử
-kế tiếp — vừa tiết kiệm ở phần lớn trường hợp, vừa không để AI yếu lặp sai mãi. Vai trò **lập kế
-hoạch và rà bảo mật luôn khoá cứng ở Elite**, không bị hạ xuống dù bạn tuỳ chỉnh cấu hình — vì đây là
-2 bước không nên đánh đổi để tiết kiệm.
+- 💬 **Conversation-first UI** — no diagrams to learn. Talk to DarkShark like you would any chat
+  assistant; plans, diffs, and progress show up inline or in a side panel.
+- 🧩 **Task Graph under the hood** — every request is broken into dependent, trackable steps, run in
+  parallel where possible.
+- 🗺️ **Local codebase indexing (Graphify)** — maps your codebase locally (no AI tokens spent) so
+  agents get the right context before touching anything.
+- 🔌 **Model Servers** — connect as many AI providers as you want, and type in *any* model ID by
+  hand (e.g. `deepseek-v4-pro`), not just a fixed dropdown list. Context window and pricing are
+  auto-detected whenever possible.
+- ⚡ **Smart / Normal mode** — Smart automatically routes planning and safety-critical decisions to a
+  stronger (Elite) model and routine coding/fixing work to a lighter (Scout) model to cut cost;
+  Normal pins one model for everything. Chosen right from the chat input, per conversation.
+- 💰 **Cost Guard** — estimates and blocks spend **before** calling any AI, with a mid-stream kill
+  switch if actual cost runs away from the estimate.
+- 🔒 **Approval Gate** — pauses and asks for your confirmation before touching sensitive areas
+  (payments, auth, migrations).
+- 🛡️ **Sandboxed execution** — every coding subagent runs in an isolated Windows Job
+  Object/AppContainer with resource limits and an OS-level network allowlist.
+- 🔁 **Two-tier circuit breakers** — independent retry limits for review and testing, so a stuck agent
+  can't loop forever and burn your budget.
+- 📜 **Immutable audit log** — every spend, merge, rollback, and emergency stop is permanently
+  recorded and cannot be edited or deleted, even by DarkShark itself.
+- ♻️ **Crash recovery** — if the app closes unexpectedly mid-task, it resumes cleanly on next launch
+  instead of losing your session.
+- 🚫 **No fake data, ever** — if nothing succeeded, DarkShark shows a clear error, never a fabricated
+  "it worked" placeholder.
 
 ---
 
-## Cách hoạt động (tổng quan)
+## Conversation-first interface
+
+DarkShark's interface is deliberately familiar: a sidebar for conversation history and projects, a
+chat transcript in the middle, and a collapsible side panel for diffs and implementation plans —
+similar to tools like Google Antigravity. There is no separate "node graph" screen to learn; the
+Architect agent's plan is presented as a readable document (goals, open questions, review-required
+callouts, step list) right inside the panel.
+
+---
+
+## Model Servers — connect any provider, any model
+
+Instead of being locked to two hardcoded providers, DarkShark lets you add multiple **Model
+Servers**, each with:
+
+- A display name you choose (e.g. "Claude main", "Cheap DeepSeek")
+- A provider type: Anthropic, OpenAI, or **Custom (any OpenAI-compatible endpoint)**
+- A **free-text Model ID** field — type any model string, no fixed list to fall out of date
+- Auto-detected context window and pricing whenever DarkShark recognizes the model or the endpoint
+  exposes model metadata; manual override is always available, with a clear warning when pricing is
+  unverified
+
+You can assign one Model Server to the **Elite** role (planning/decisions) and another to **Scout**
+(execution) for Smart Mode, or just pick one directly for a conversation.
+
+---
+
+## Smart vs Normal mode
+
+Chosen from a single chip at the bottom of the chat input — no separate toggle elsewhere:
+
+- **⚡ Smart** — planning, dispatch decisions, security review, and knowledge distillation always run
+  on your assigned Elite model; coding, review, integration, and QA run on your assigned Scout model.
+  If a Scout attempt fails and needs a retry, DarkShark automatically escalates that retry to Elite.
+  Security review and planning are never downgraded, even if you tune the mapping.
+- **◻ Normal** — pins one Model Server for the entire conversation, no tiering.
+
+---
+
+## Try it free with Puter (no key required)
+
+For a **quick first taste** without creating any provider account, DarkShark can connect through
+[Puter.js](https://puter.com), which lets you access several AI models (including Gemini) by
+signing in with a free Puter account instead of an API key.
+
+**Be aware**: Puter's free monthly allowance is small (well under $1 of usage) and is meant for a
+quick trial, not sustained use — it will run out quickly on real coding tasks. DarkShark clearly
+labels this option as a trial connection, not a substitute for your own API key, and will show a
+clear error (never fake success) if the allowance runs out mid-task.
+
+---
+
+## How it works (overview)
 
 ```mermaid
 flowchart LR
-    A[Yêu cầu của bạn] --> B[Root Agent<br/>chọn chế độ]
-    B --> C[Architect<br/>lập Task Graph]
-    C --> D[Graphify<br/>bản đồ codebase]
-    D --> E{Smart Mode}
-    E -->|Nghĩ| F[Model Elite]
-    E -->|Làm| G[Model Scout]
-    F --> H[Cost Guard + Approval Gate]
-    G --> H
-    H --> I[Sandbox: viết code]
-    I --> J[Review + Test + Quét bảo mật]
-    J -->|Đạt| K[Merge vào workspace]
-    J -->|Chưa đạt, còn lượt| I
-    J -->|Hết lượt| L[Dừng, cần bạn xem lại]
-    K --> M{Còn task?}
-    M -->|Còn| C
-    M -->|Hết| N[Hoàn tất + Ghi lại bài học]
+    A[Your request] --> B[Root Agent<br/>picks a mode]
+    B --> C[Architect<br/>builds a plan]
+    C --> D[Local codebase indexing]
+    D --> E{Smart or Normal?}
+    E -->|Smart| F[Elite model: plan/decide]
+    E -->|Smart| G[Scout model: code/fix]
+    E -->|Normal| H[Your pinned model]
+    F --> I[Cost Guard + Approval Gate]
+    G --> I
+    H --> I
+    I --> J[Sandboxed coding]
+    J --> K[Review + Test + Security scan]
+    K -->|Pass| L[Merge into your workspace]
+    K -->|Fail, retries left| J
+    K -->|Out of retries| M[Stop, ask you]
+    L --> N{More steps?}
+    N -->|Yes| C
+    N -->|No| O[Done + lessons saved]
 ```
 
-Sơ đồ kỹ thuật đầy đủ (mọi nhánh, mọi Node ID): xem [`docs/DarkShark_WorkFlow_Map_v2.mermaid`](docs/DarkShark_WorkFlow_Map_v2.mermaid).
+Full technical diagram (every node, every branch): [`docs/DarkShark_WorkFlow_Map_v2.mermaid`](docs/DarkShark_WorkFlow_Map_v2.mermaid).
 
 ---
 
-## Yêu cầu hệ thống
+## System Requirements
 
-| | Tối thiểu |
+| | Minimum |
 |---|---|
-| Hệ điều hành | Windows 10 / 11 (64-bit) |
-| CPU | 4 nhân |
-| RAM | 8GB (app chờ dùng < 300MB) |
-| GPU | Không bắt buộc |
-| Mạng | Chỉ cần khi gọi AI — các bước khác chạy được offline |
-| API key | Anthropic **hoặc** OpenAI (tự đăng ký, tự quản lý) |
+| OS | Windows 10 / 11 (64-bit) |
+| CPU | 4 cores |
+| RAM | 8GB (idle app usage < 300MB) |
+| GPU | Not required |
+| Network | Only needed when actually calling an AI model — everything else works offline |
+| Provider | Anthropic and/or OpenAI-compatible API key, **or** a free Puter account for a quick trial |
 
 ---
 
-## Cài đặt
+## Installation
 
-1. Tải `DarkShark-Setup.exe` từ mục **Releases**.
-2. Chạy file cài đặt — không cần cài thêm Go/Node/Python/Docker.
-3. Mở DarkShark, làm theo màn hình hướng dẫn để thêm API key (được mã hoá bằng Windows Credential
-   Manager, không lưu dạng chữ thường ở bất kỳ đâu trên máy).
-
----
-
-## Bắt đầu nhanh
-
-1. Mở DarkShark → nhập yêu cầu bằng ngôn ngữ tự nhiên (vd: *"Thêm chức năng quên mật khẩu cho trang
-   đăng nhập"*).
-2. Xem **Cost/Time Preview** — số tiền & thời gian ước tính trước khi chạy.
-3. Nếu việc chạm vùng nhạy cảm, xác nhận ở **Approval Gate**.
-4. Theo dõi tiến độ trực quan trên **Task Graph Canvas**, mỗi node có badge 🧠/⚙️ cho biết đang dùng
-   model tier nào.
-5. Xong việc, xem **Diff** trước khi để DarkShark merge vào codebase thật.
+1. Download `DarkShark-Setup.exe` from the **Releases** page.
+2. Run the installer — no need to install Go/Node/Python/Docker separately.
+3. Open DarkShark and follow the onboarding screen to add a Model Server (your own API key, a
+   custom endpoint, or the Puter trial connection).
 
 ---
 
-## Cấu hình (`config.yaml`)
+## Quick Start
+
+1. Open DarkShark and describe what you want in plain language.
+2. Review the **Cost/Time Preview** before anything runs.
+3. Confirm the **Approval Gate** if your request touches a sensitive area.
+4. Watch progress inline in the chat, with an 🧠/⚙️ badge showing which model tier handled each step.
+5. Review the diff before DarkShark merges it into your real codebase.
+
+---
+
+## Configuration
+
+Model Servers, budgets, and permissions are managed from **Settings** in the app. Example of what's
+stored under the hood (`config.yaml`):
 
 ```yaml
 smart_mode: true
@@ -164,68 +211,80 @@ sensitive_paths:
   - "*/payment/*"
   - "*/auth/*"
   - "*/migration/*"
-allowed_domains:
-  - api.anthropic.com
-  - api.openai.com
 low_spec_mode: auto
 ```
 
-Toàn bộ danh sách tuỳ chọn: xem [`docs/DarkShark_CodeX_Build_Prompt_v2.md`](docs/DarkShark_CodeX_Build_Prompt_v2.md), mục 8.
+Model Server entries (provider, base URL, model ID, pricing) are stored separately in the local
+database; API keys are never stored in this file — see [Security & Privacy](#security--privacy).
 
 ---
 
-## Kiến trúc & an toàn
+## Architecture & Safety
 
-- **Orchestrator core**: Go (binary native, không cần runtime cài thêm).
-- **Vỏ ứng dụng**: Tauri 2.0 (Rust + WebView2 có sẵn trên Windows 10/11).
-- **Lưu trữ**: SQLite (WAL mode) — 1 file `.db` cục bộ, không server ngoài.
-- **Cách ly Subagent**: Windows Job Object + AppContainer/Restricted Token — giới hạn tài nguyên,
-  cô lập filesystem, chặn mạng ngoài whitelist ở tầng hệ điều hành (không chỉ check trong code).
-- **Audit Log**: append-only qua SQLite trigger — không API nội bộ nào sửa/xoá được.
+- **Orchestrator core**: Go (native binary, no separate runtime to install).
+- **App shell**: Tauri 2.0 (Rust + the WebView2 already on Windows 10/11).
+- **Storage**: SQLite (WAL mode) — a single local `.db` file, no external server.
+- **Subagent isolation**: Windows Job Object + AppContainer/Restricted Token — resource limits,
+  filesystem isolation, and an OS-level network allowlist (not just an in-app check).
+- **Audit log**: append-only via a SQLite trigger — no internal API can edit or delete it.
 
-Tài liệu kỹ thuật đầy đủ dành cho người muốn build/đóng góp: [`docs/DarkShark_CodeX_Build_Prompt_v2.md`](docs/DarkShark_CodeX_Build_Prompt_v2.md).
-
----
-
-## Bảo mật & quyền riêng tư
-
-- API key **không bao giờ** lưu dạng chữ thường — mã hoá qua Windows Credential Manager (DPAPI).
-- DarkShark không có server trung gian, không log nội dung request gửi tới nhà cung cấp AI.
-- Mọi số tiền hiển thị là **ước tính**; hoá đơn thật do Anthropic/OpenAI xuất trực tiếp cho tài khoản
-  API của bạn — DarkShark không thu phí sử dụng AI.
-- Kênh telemetry nội bộ (WebSocket `127.0.0.1`) yêu cầu token phiên, tiến trình khác trên máy không
-  đọc được.
+Full technical build/architecture reference: [`docs/DarkShark_CodeX_Build_Prompt_v2.md`](docs/DarkShark_CodeX_Build_Prompt_v2.md).
 
 ---
 
-## Câu hỏi thường gặp
+## Security & Privacy
 
-**DarkShark có gửi code của tôi cho ai khác ngoài Anthropic/OpenAI không?**
-Không. Request đi thẳng từ máy bạn tới nhà cung cấp AI bằng key của chính bạn.
-
-**Tôi cần trả phí DarkShark hàng tháng không?**
-DarkShark bán phần mềm; chi phí AI là chi phí API riêng của bạn với Anthropic/OpenAI, không qua DarkShark.
-
-**Mất mạng giữa chừng thì sao?**
-Các bước không cần AI (lint, chạy test, quét bảo mật) vẫn chạy được. Bước cần gọi AI sẽ tạm dừng tới
-khi có mạng lại.
-
-**App bị tắt đột ngột giữa lúc đang chạy thì mất dữ liệu không?**
-Không — lần mở lại, DarkShark tự phát hiện việc dang dở và đưa về hàng chờ để tiếp tục.
+- API keys are **never** stored in plaintext — encrypted via Windows Credential Manager (DPAPI).
+- DarkShark has no middle server of its own and does not log the content of your requests to your
+  chosen AI provider.
+- If you choose the Puter trial connection, be aware that requests go through Puter's own
+  infrastructure before reaching the underlying model — this is clearly labeled in the app, unlike
+  your own direct BYOK connections.
+- All displayed cost figures are **estimates**; your actual bill comes directly from your provider
+  (Anthropic, OpenAI, Puter, etc.) — DarkShark does not charge for AI usage.
+- The local telemetry WebSocket (`127.0.0.1`) requires a per-session token; no other process on your
+  machine can read it.
 
 ---
 
-## Đóng góp
+## FAQ
 
-Đang trong giai đoạn phát triển. Issue/PR đóng góp vui lòng tham khảo tài liệu kỹ thuật trong
-`docs/` trước khi gửi để đảm bảo đúng kiến trúc (Handoff vs Task Dispatch, Circuit Breaker, Sandbox...).
+**Does DarkShark send my code anywhere besides my chosen AI provider?**
+No. Requests go straight from your machine to the provider you configured, using your own
+credentials.
 
-## Giấy phép
+**Do I pay DarkShark a monthly fee?**
+DarkShark sells the software itself. AI usage cost is your own arrangement with your provider(s),
+not billed through DarkShark.
 
-_(Cập nhật giấy phép chính thức tại đây trước khi public repo.)_
+**What happens if my connection drops mid-task?**
+Non-AI steps (linting, running tests, security scanning) keep working offline. Steps needing AI
+pause until connectivity returns, and are clearly marked — never silently faked.
+
+**What if the app closes unexpectedly?**
+On next launch, DarkShark detects any interrupted task and safely requeues it — you won't lose your
+session.
+
+---
+
+## Contributing
+
+DarkShark is under active development. Please read the technical docs in `docs/` before opening a
+PR, to keep changes consistent with the existing architecture (Handoff vs Task Dispatch, circuit
+breakers, sandboxing, Model Server routing).
+
+## License
+
+DarkShark is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**. See
+[`LICENSE`](LICENSE) for the full text.
+
+In short: you're free to use, study, modify, and redistribute DarkShark. If you modify it and make
+that modified version available to others over a network (including as a hosted service), you must
+also make your modified source code available to those users under the same license. This keeps
+DarkShark and any derivative of it open for everyone.
 
 ---
 
 <div align="center">
-<sub>DarkShark không thuộc sở hữu hay được tài trợ bởi Anthropic, OpenAI, hay Google.</sub>
+<sub>DarkShark is not affiliated with or endorsed by Anthropic, OpenAI, Google, or Puter Technologies Inc.</sub>
 </div>
